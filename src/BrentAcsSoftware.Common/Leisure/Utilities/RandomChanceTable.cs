@@ -1,30 +1,31 @@
 ﻿namespace BrentAcsSoftware.Common.Leisure.Utilities;
 
-public interface IRandomChanceTableEntry
-{
-   double? Chance { get; }
-}
+// public interface IRandomChanceTableEntry
+// {
+//    double? Chance { get; }
+// }
 
 public interface IRandomChanceTable<T>
 {
+   T? GetByChance(double roll);
 }
 
-public abstract class RandomChanceTable<T> : IRandomChanceTable<T> where T : IRandomChanceTableEntry
+public abstract class RandomChanceTable<T> : IRandomChanceTable<T> //where T : IRandomChanceTableEntry
 {
-   protected abstract List<T> RawEntries { get; }
+   private record Entry<T>(double? Chance, T? Value);
 
-   private IList<T>? _entries;
-   private void ValidateEntries()
+   private IList<Entry<T>> _entries = new List<Entry<T>>();
+
+   protected abstract void BuildTable();
+
+   protected void AddEntry(double? chance, T? value)
    {
-      if (RawEntries is null)
-         throw new Exception("RawEntries is null");
-      if (_entries is not null)
-         return;
+      _entries.Add(new Entry<T>(chance, value));
 
-      if(RawEntries.Count(e => e.Chance is null) > 1)
+      if (_entries.Count(e => e.Chance is null) > 1)
          throw new Exception("RawEntries contains multiple entries w/ defaulted chance (null).");
-      
-      _entries = RawEntries.OrderBy(i => i.Chance).ToList();
+
+      _entries = _entries.OrderBy(i => i.Chance).ToList();
       if (_entries.FirstOrDefault()?.Chance is null)
       {
          var nullChanceEntry = _entries[ 0 ];
@@ -33,7 +34,15 @@ public abstract class RandomChanceTable<T> : IRandomChanceTable<T> where T : IRa
       }
    }
 
-   public T GetByChance(double roll)
+   private void ValidateEntries()
+   {
+      if (_entries.Any())
+         return;
+
+      BuildTable();
+   }
+
+   public T? GetByChance(double roll)
    {
       ValidateEntries();
       double current = 0;
@@ -45,9 +54,9 @@ public abstract class RandomChanceTable<T> : IRandomChanceTable<T> where T : IRa
 
          current += item.Chance.Value;
          if (roll < current)
-            return item;
+            return item.Value;
       }
 
-      return _entries.Last();
+      return _entries.Last().Value;
    }
 }

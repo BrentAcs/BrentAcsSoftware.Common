@@ -4,30 +4,26 @@ namespace BrentAcsSoftware.Common.Tests.Leisure;
 
 public class RandomChanceTableTests
 {
-   public record TestEntry(double? Chance, string Name) : IRandomChanceTableEntry
+   public class TestRandomChanceTable : RandomChanceTable<string>
    {
+      protected override void BuildTable()
+      {
+         AddEntry(10, "Entry 1");
+         AddEntry(25, "Entry 2");
+         AddEntry(25, "Entry 3");
+         AddEntry(null, "Entry 4");
+      }
    }
 
-   public class TestRandomChanceTable : RandomChanceTable<TestEntry>
+   public class MultipleNullChanceTestRandomChanceTable : RandomChanceTable<string>
    {
-      protected override List<TestEntry> RawEntries => new()
+      protected override void BuildTable()
       {
-         new TestEntry(10, "Entry 1"),
-         new TestEntry(25, "Entry 2"),
-         new TestEntry(25, "Entry 3"),
-         new TestEntry(null, "Entry 4"),
-      };
-   }
-
-   public class MultipleNullChanceTestRandomChanceTable : RandomChanceTable<TestEntry>
-   {
-      protected override List<TestEntry> RawEntries => new()
-      {
-         new TestEntry(10, "Entry 1"),
-         new TestEntry(25, "Entry 2"),
-         new TestEntry(null, "Entry 3"),
-         new TestEntry(null, "Entry 4"),
-      };
+         AddEntry(10, "Entry 1");
+         AddEntry(25, "Entry 2");
+         AddEntry(null, "Entry 3");
+         AddEntry(null, "Entry 4");
+      }
    }
 
    [Theory]
@@ -42,7 +38,7 @@ public class RandomChanceTableTests
 
       var result = sut.GetByChance(chance);
 
-      result.Name.Should().Be(expectedName);
+      result.Should().Be(expectedName);
    }
 
    [Fact]
